@@ -124,6 +124,29 @@ dotnet run
 
 ## Troubleshooting
 
+### Problem: "Driver not found" beim MEWS-Login
+
+**Fehler:** `Driver not found: Pfad ... \bin\.playwright\node\win32_x64\node.exe`
+
+**Lösung 1 - Automatischer Fix:**
+```powershell
+.\fix-playwright.ps1
+```
+
+**Lösung 2 - Manuelle Installation:**
+```powershell
+# PowerShell Core installieren (falls nicht vorhanden)
+winget install Microsoft.PowerShell
+
+# Playwright-Browser installieren
+pwsh .\bin\Debug\net8.0-windows\playwright.ps1 install chromium
+```
+
+**Lösung 3 - In der Anwendung:**
+- Die Anwendung versucht automatisch, Playwright beim ersten MEWS-Login zu installieren
+- Warten Sie 2-3 Minuten während der Installation
+- Status wird im Anwendungsfenster angezeigt
+
 ### Problem: "dotnet" Befehl nicht gefunden
 
 **Lösung:**

@@ -27,6 +27,21 @@ namespace Tagesplan.Services
         {
             try
             {
+                UpdateStatus("Überprüfe Playwright-Installation...");
+
+                // Check if Playwright browsers are installed
+                if (!await IsPlaywrightInstalledAsync())
+                {
+                    UpdateStatus("Playwright-Browser werden installiert (einmalig, ca. 2-3 Minuten)...");
+                    if (!await InstallPlaywrightAsync())
+                    {
+                        UpdateStatus("✗ Fehler: Playwright-Installation fehlgeschlagen!");
+                        UpdateStatus("  Bitte manuell installieren: pwsh bin\\Debug\\net8.0-windows\\playwright.ps1 install");
+                        return false;
+                    }
+                    UpdateStatus("✓ Playwright erfolgreich installiert!");
+                }
+
                 UpdateStatus("Initialisiere Browser mit persistentem Profil...");
 
                 var playwright = await Playwright.CreateAsync();
@@ -126,7 +141,91 @@ namespace Tagesplan.Services
 
             UpdateStatus("Browser geschlossen (Session gespeichert)");
         }
-        
+
+        private async Task<bool> IsPlaywrightInstalledAsync()
+        {
+            try
+            {
+                // Check if the Chromium/Edge browser driver exists
+                var playwright = await Playwright.CreateAsync();
+                return true;
+            }
+            catch (PlaywrightException ex)
+            {
+                // If we get an exception about missing drivers, Playwright is not installed
+                if (ex.Message.Contains("Driver") || ex.Message.Contains("Executable doesn't exist"))
+                {
+                    return false;
+                }
+                // For other exceptions, assume it's installed but there's another issue
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> InstallPlaywrightAsync()
+        {
+            try
+            {
+                // Get the path to the playwright.ps1 script
+                var assemblyPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                var playwrightScriptPath = Path.Combine(assemblyPath!, "playwright.ps1");
+
+                if (!File.Exists(playwrightScriptPath))
+                {
+                    UpdateStatus($"✗ Playwright-Skript nicht gefunden: {playwrightScriptPath}");
+                    return false;
+                }
+
+                UpdateStatus("Starte Playwright-Installation...");
+
+                // Run the playwright install command using PowerShell
+                var processStartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "pwsh",
+                    Arguments = $"-File \"{playwrightScriptPath}\" install chromium",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(processStartInfo);
+                if (process == null)
+                {
+                    UpdateStatus("✗ Konnte Playwright-Installationsprozess nicht starten");
+                    return false;
+                }
+
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 0)
+                {
+                    UpdateStatus("✓ Playwright-Installation abgeschlossen");
+                    return true;
+                }
+                else
+                {
+                    UpdateStatus($"✗ Playwright-Installation fehlgeschlagen (Exit Code: {process.ExitCode})");
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        UpdateStatus($"  Fehler: {error}");
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus($"✗ Fehler bei Playwright-Installation: {ex.Message}");
+                return false;
+            }
+        }
+
         private void UpdateStatus(string message)
         {
             StatusChanged?.Invoke(this, message);

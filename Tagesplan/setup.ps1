@@ -79,23 +79,33 @@ Write-Host ""
 
 # Schritt 4: Playwright installieren
 Write-Host "[4/4] Installiere Playwright-Browser..." -ForegroundColor Green
-$playwrightPath = ".\bin\Release\net8.0-windows\playwright.ps1"
-if (Test-Path $playwrightPath) {
-    try {
-        & pwsh $playwrightPath install
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "  ✓ Playwright-Browser erfolgreich installiert" -ForegroundColor Green
-        } else {
-            Write-Host "  ! Playwright-Installation mit Warnung beendet" -ForegroundColor Yellow
+
+# Prüfe ob pwsh verfügbar ist
+$pwshAvailable = Get-Command pwsh -ErrorAction SilentlyContinue
+if (-not $pwshAvailable) {
+    Write-Host "  ! PowerShell Core (pwsh) nicht gefunden" -ForegroundColor Yellow
+    Write-Host "  Playwright wird beim ersten MEWS-Login automatisch installiert." -ForegroundColor Yellow
+} else {
+    $playwrightPath = ".\bin\Release\net8.0-windows\playwright.ps1"
+    if (Test-Path $playwrightPath) {
+        try {
+            Write-Host "  → Installiere Chromium-Browser..." -ForegroundColor Yellow
+            $installProcess = Start-Process -FilePath "pwsh" -ArgumentList "-File `"$playwrightPath`" install chromium" -NoNewWindow -Wait -PassThru
+
+            if ($installProcess.ExitCode -eq 0) {
+                Write-Host "  ✓ Playwright-Browser erfolgreich installiert" -ForegroundColor Green
+            } else {
+                Write-Host "  ! Playwright-Installation mit Warnung beendet (Exit Code: $($installProcess.ExitCode))" -ForegroundColor Yellow
+                Write-Host "  Beim ersten MEWS-Login wird automatisch nachinstalliert." -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "  ! Playwright konnte nicht installiert werden: $_" -ForegroundColor Yellow
             Write-Host "  Beim ersten MEWS-Login wird automatisch nachinstalliert." -ForegroundColor Yellow
         }
-    } catch {
-        Write-Host "  ! Playwright konnte nicht installiert werden" -ForegroundColor Yellow
-        Write-Host "  Beim ersten MEWS-Login wird automatisch nachinstalliert." -ForegroundColor Yellow
+    } else {
+        Write-Host "  ! Playwright-Skript nicht gefunden: $playwrightPath" -ForegroundColor Yellow
+        Write-Host "  Beim ersten MEWS-Login wird automatisch installiert." -ForegroundColor Yellow
     }
-} else {
-    Write-Host "  ! Playwright-Skript nicht gefunden" -ForegroundColor Yellow
-    Write-Host "  Beim ersten MEWS-Login wird automatisch installiert." -ForegroundColor Yellow
 }
 Write-Host ""
 
