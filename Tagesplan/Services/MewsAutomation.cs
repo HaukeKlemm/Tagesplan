@@ -255,11 +255,29 @@ namespace Tagesplan.Services
                     if (!string.IsNullOrWhiteSpace(errorOutput))
                     {
                         UpdateStatus($"  Fehler: {errorOutput}");
+
+                        // Check for specific error about missing assets
+                        if (errorOutput.Contains("missing required assets") || errorOutput.Contains("ensure to build"))
+                        {
+                            UpdateStatus("");
+                            UpdateStatus("  LÖSUNG:");
+                            UpdateStatus("  1. Schließen Sie diese Anwendung (ALT+F4)");
+                            UpdateStatus("  2. In Visual Studio: Build → Projektmappe neu erstellen (STRG+SHIFT+B)");
+                            UpdateStatus("  3. Starten Sie die Anwendung neu");
+                            UpdateStatus("  4. Klicken Sie erneut auf 'MEWS Login'");
+                            UpdateStatus("");
+                            UpdateStatus("  Alternative: PowerShell als Administrator:");
+                            UpdateStatus("  cd \"C:\\Users\\offic\\Desktop\\Tagesplan\\Tagesplan-main\\Tagesplan\"");
+                            UpdateStatus("  dotnet clean");
+                            UpdateStatus("  dotnet build");
+                            UpdateStatus("  pwsh -ExecutionPolicy Bypass bin\\Debug\\net8.0-windows\\playwright.ps1 install chromium");
+                        }
                     }
 
                     // Show actual command to run manually
-                    UpdateStatus("  Manuell installieren mit:");
-                    UpdateStatus($"  pwsh \"{playwrightScriptPath}\" install chromium");
+                    UpdateStatus("");
+                    UpdateStatus("  Oder manuell installieren mit:");
+                    UpdateStatus($"  pwsh -ExecutionPolicy Bypass -File \"{playwrightScriptPath}\" install chromium");
                     return false;
                 }
             }
