@@ -49,17 +49,16 @@ namespace Tagesplan.Services
                     UpdateStatus("✓ Playwright erfolgreich installiert!");
                 }
 
-                UpdateStatus("Initialisiere Browser mit persistentem Profil...");
+                UpdateStatus("Initialisiere Browser...");
 
                 var playwright = await Playwright.CreateAsync();
 
-                // Launch persistent context (verwendet dasselbe Profil wie "Rechnungen MEWS")
+                // Launch persistent context with Edge (wie gestern - funktioniert!)
                 _context = await playwright.Chromium.LaunchPersistentContextAsync(_userDataDir, new BrowserTypeLaunchPersistentContextOptions
                 {
                     Headless = false,
                     Channel = "msedge",
                     AcceptDownloads = true,
-                    DownloadsPath = _downloadPath,  // WICHTIG: Download-Ziel für Playwright setzen!
                     Args = new[]
                     {
                         "--disable-blink-features=AutomationControlled",
@@ -79,7 +78,14 @@ namespace Tagesplan.Services
             }
             catch (Exception ex)
             {
-                UpdateStatus($"Fehler: {ex.Message}");
+                UpdateStatus($"✗ Fehler: {ex.Message}");
+                UpdateStatus("");
+                UpdateStatus("PROBLEMLÖSUNG:");
+                UpdateStatus("1. Schließen Sie alle Edge/Chrome Fenster");
+                UpdateStatus("2. Starten Sie die Anwendung neu");
+                UpdateStatus("3. Falls der Fehler weiterhin auftritt:");
+                UpdateStatus($"   - Löschen Sie: {_userDataDir}");
+                UpdateStatus("   - Starten Sie die App erneut");
                 return false;
             }
         }
@@ -95,13 +101,8 @@ namespace Tagesplan.Services
             try
             {
                 UpdateStatus("Warte auf Download...");
-                UpdateStatus($"Download-Ziel: {_downloadPath}");
                 UpdateStatus("Bitte starten Sie den Download des Reservierungsberichts in MEWS.");
                 UpdateStatus("(Detaillierte Ansicht mit Produkten und Notizen)");
-
-                // Ensure directory exists BEFORE download starts
-                Directory.CreateDirectory(_downloadPath);
-                UpdateStatus($"✓ Download-Ordner bereit: {_downloadPath}");
 
                 // Wait for download
                 var download = await _page.WaitForDownloadAsync(new PageWaitForDownloadOptions
@@ -116,34 +117,18 @@ namespace Tagesplan.Services
 
                 await download.SaveAsAsync(filePath);
 
-                UpdateStatus($"✓ Download erfolgreich!");
-                UpdateStatus($"✓ Datei gespeichert: {filePath}");
-                UpdateStatus("");
-                UpdateStatus($"Ordner öffnen: explorer \"{_downloadPath}\"");
-
-                // Try to open the folder automatically
-                try
-                {
-                    System.Diagnostics.Process.Start("explorer.exe", _downloadPath);
-                    UpdateStatus("✓ Download-Ordner wurde geöffnet");
-                }
-                catch
-                {
-                    // Ignore if explorer can't be opened
-                }
+                UpdateStatus($"✓ Download erfolgreich: {filePath}");
 
                 return filePath;
             }
             catch (TimeoutException)
             {
                 UpdateStatus("Timeout: Kein Download erkannt. Bitte versuchen Sie es erneut.");
-                UpdateStatus($"Falls der Download manuell erfolgt ist, suchen Sie hier: {_downloadPath}");
                 return null;
             }
             catch (Exception ex)
             {
-                UpdateStatus($"✗ Fehler beim Download: {ex.Message}");
-                UpdateStatus($"Download-Ziel war: {_downloadPath}");
+                UpdateStatus($"Fehler beim Download: {ex.Message}");
                 return null;
             }
         }
