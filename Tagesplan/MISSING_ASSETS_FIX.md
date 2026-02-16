@@ -8,24 +8,51 @@ Please ensure to build your project before running Playwright tool.
 
 ---
 
-## 🎯 LÖSUNG (2 Minuten)
+## 🎯 SCHNELLSTE LÖSUNG für Ihren Rechner
+
+Sie sind hier: `C:\Users\offic\Desktop\Tagesplan\Tagesplan-main\Tagesplan`
+
+### Option A: Quick-Fix Skript (1 Befehl!)
+
+```powershell
+.\quick-fix.ps1
+```
+
+**Macht automatisch:**
+- ✅ Navigiert zum richtigen Ordner
+- ✅ Clean + Restore + Build
+- ✅ Playwright installieren
+- ✅ Anwendung starten
+
+**FERTIG in 2-3 Minuten!** ⚡
+
+---
+
+### Option B: Manuell (5 Befehle)
+
+```powershell
+cd "C:\Users\offic\Desktop\Tagesplan\Tagesplan-main\Tagesplan"
+dotnet clean
+dotnet restore
+dotnet build
+pwsh -ExecutionPolicy Bypass bin\Debug\net8.0-windows\playwright.ps1 install chromium
+.\bin\Debug\net8.0-windows\Tagesplan.exe
+```
+
+---
+
+## 🔧 Für andere Rechner
 
 ### Option 1: Automatisches Skript (EMPFOHLEN)
 
-1. **Schließen Sie die laufende Anwendung** (ALT+F4)
-2. **PowerShell öffnen im Projektordner**
+1. **Navigieren Sie zum Projekt-Ordner** (wo .csproj oder .sln ist)
+2. **Öffnen Sie PowerShell**
 3. **Ausführen:**
    ```powershell
    .\rebuild-and-install-playwright.ps1
    ```
 
-**Das Skript macht:**
-- ✅ Clean Build
-- ✅ Pakete wiederherstellen
-- ✅ Projekt neu bauen
-- ✅ Playwright installieren
-
-**FERTIG!** Dann Anwendung neu starten.
+Das Skript findet automatisch .sln oder .csproj!
 
 ---
 

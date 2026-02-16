@@ -7,22 +7,58 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Prüfe ob wir im richtigen Ordner sind
-if (-not (Test-Path "Tagesplan.sln")) {
-    Write-Host "✗ Fehler: Tagesplan.sln nicht gefunden!" -ForegroundColor Red
-    Write-Host "  Bitte navigieren Sie zum Projektroot-Ordner." -ForegroundColor Yellow
+$projectFile = Get-ChildItem -Filter "*.csproj" | Select-Object -First 1
+$solutionFile = Get-ChildItem -Filter "*.sln" | Select-Object -First 1
+
+if (-not $projectFile -and -not $solutionFile) {
+    Write-Host "✗ Fehler: Weder .csproj noch .sln gefunden!" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Bitte navigieren Sie zu einem dieser Ordner:" -ForegroundColor Yellow
+    Write-Host "  • Tagesplan\Tagesplan-main\ (wenn .sln dort ist)" -ForegroundColor White
+    Write-Host "  • Tagesplan\Tagesplan-main\Tagesplan\ (wenn nur .csproj dort ist)" -ForegroundColor White
     Write-Host ""
     Write-Host "Aktueller Pfad: $PWD" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Suche in Unterordnern..." -ForegroundColor Yellow
+
+    # Versuche .sln oder .csproj in Unterordnern zu finden
+    $foundProjects = Get-ChildItem -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Select-Object -First 5
+    $foundSolutions = Get-ChildItem -Recurse -Filter "*.sln" -ErrorAction SilentlyContinue | Select-Object -First 5
+
+    if ($foundSolutions) {
+        Write-Host ""
+        Write-Host "Gefundene .sln Dateien:" -ForegroundColor Cyan
+        foreach ($sln in $foundSolutions) {
+            Write-Host "  • $($sln.DirectoryName)" -ForegroundColor White
+        }
+    }
+
+    if ($foundProjects) {
+        Write-Host ""
+        Write-Host "Gefundene .csproj Dateien:" -ForegroundColor Cyan
+        foreach ($proj in $foundProjects) {
+            Write-Host "  • $($proj.DirectoryName)" -ForegroundColor White
+        }
+    }
+
+    Write-Host ""
     pause
     exit 1
 }
 
-Write-Host "✓ Projektroot gefunden" -ForegroundColor Green
+if ($solutionFile) {
+    Write-Host "✓ Solution gefunden: $($solutionFile.Name)" -ForegroundColor Green
+    $buildTarget = $solutionFile.FullName
+} else {
+    Write-Host "✓ Projekt gefunden: $($projectFile.Name)" -ForegroundColor Green
+    $buildTarget = $projectFile.FullName
+}
 Write-Host ""
 
 # Schritt 1: Clean
 Write-Host "[1/4] Bereinige alte Build-Dateien..." -ForegroundColor Green
 try {
-    dotnet clean --configuration Debug
+    dotnet clean "$buildTarget" --configuration Debug
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  ✓ Bereinigung erfolgreich" -ForegroundColor Green
     } else {
@@ -36,7 +72,7 @@ Write-Host ""
 # Schritt 2: Restore
 Write-Host "[2/4] Stelle NuGet-Pakete wieder her..." -ForegroundColor Green
 try {
-    dotnet restore
+    dotnet restore "$buildTarget"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ✗ Fehler beim Wiederherstellen der Pakete" -ForegroundColor Red
         exit 1
@@ -51,7 +87,7 @@ Write-Host ""
 # Schritt 3: Build
 Write-Host "[3/4] Baue Projekt neu..." -ForegroundColor Green
 try {
-    dotnet build --configuration Debug --no-restore
+    dotnet build "$buildTarget" --configuration Debug --no-restore
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ✗ Build fehlgeschlagen" -ForegroundColor Red
         Write-Host ""
