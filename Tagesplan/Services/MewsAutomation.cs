@@ -21,6 +21,13 @@ namespace Tagesplan.Services
                 "EdgeProfile"
             );
             Directory.CreateDirectory(_userDataDir);
+
+            // Ensure download directory exists
+            Directory.CreateDirectory(_downloadPath);
+
+            System.Diagnostics.Debug.WriteLine($"MewsAutomation initialized:");
+            System.Diagnostics.Debug.WriteLine($"  Download-Pfad: {_downloadPath}");
+            System.Diagnostics.Debug.WriteLine($"  Browser-Profil: {_userDataDir}");
         }
         
         public async Task<bool> InitializeAndLoginAsync(string mewsUrl = "https://app.mews.com")
@@ -83,38 +90,59 @@ namespace Tagesplan.Services
                 UpdateStatus("Fehler: Browser nicht initialisiert");
                 return null;
             }
-            
+
             try
             {
                 UpdateStatus("Warte auf Download...");
+                UpdateStatus($"Download-Ziel: {_downloadPath}");
                 UpdateStatus("Bitte starten Sie den Download des Reservierungsberichts in MEWS.");
                 UpdateStatus("(Detaillierte Ansicht mit Produkten und Notizen)");
-                
+
+                // Ensure directory exists BEFORE download starts
+                Directory.CreateDirectory(_downloadPath);
+                UpdateStatus($"✓ Download-Ordner bereit: {_downloadPath}");
+
                 // Wait for download
                 var download = await _page.WaitForDownloadAsync(new PageWaitForDownloadOptions
                 {
                     Timeout = 300000 // 5 minutes
                 });
-                
+
                 var fileName = download.SuggestedFilename;
                 var filePath = Path.Combine(_downloadPath, fileName);
-                
-                // Ensure directory exists
-                Directory.CreateDirectory(_downloadPath);
-                
+
+                UpdateStatus($"Speichere Datei: {fileName}...");
+
                 await download.SaveAsAsync(filePath);
-                
-                UpdateStatus($"Download erfolgreich: {fileName}");
+
+                UpdateStatus($"✓ Download erfolgreich!");
+                UpdateStatus($"✓ Datei gespeichert: {filePath}");
+                UpdateStatus("");
+                UpdateStatus($"Ordner öffnen: explorer \"{_downloadPath}\"");
+
+                // Try to open the folder automatically
+                try
+                {
+                    System.Diagnostics.Process.Start("explorer.exe", _downloadPath);
+                    UpdateStatus("✓ Download-Ordner wurde geöffnet");
+                }
+                catch
+                {
+                    // Ignore if explorer can't be opened
+                }
+
                 return filePath;
             }
             catch (TimeoutException)
             {
                 UpdateStatus("Timeout: Kein Download erkannt. Bitte versuchen Sie es erneut.");
+                UpdateStatus($"Falls der Download manuell erfolgt ist, suchen Sie hier: {_downloadPath}");
                 return null;
             }
             catch (Exception ex)
             {
-                UpdateStatus($"Fehler beim Download: {ex.Message}");
+                UpdateStatus($"✗ Fehler beim Download: {ex.Message}");
+                UpdateStatus($"Download-Ziel war: {_downloadPath}");
                 return null;
             }
         }
