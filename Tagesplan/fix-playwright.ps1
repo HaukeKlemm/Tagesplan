@@ -6,7 +6,16 @@ Write-Host "  Playwright-Browser Fix" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Finde die Anwendungs-DLL
+# Überprüfe Administrator-Rechte
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Host "HINWEIS: Für Installation von PowerShell Core werden Admin-Rechte empfohlen." -ForegroundColor Yellow
+    Write-Host "Skript kann trotzdem fortfahren..." -ForegroundColor Yellow
+    Write-Host ""
+}
+
+# Schritt 0: Projekt bauen (falls noch nicht geschehen)
+Write-Host "[0/3] Überprüfe Projekt-Build..." -ForegroundColor Green
 $possiblePaths = @(
     ".\bin\Debug\net8.0-windows\playwright.ps1",
     ".\bin\Release\net8.0-windows\playwright.ps1"
@@ -21,15 +30,41 @@ foreach ($path in $possiblePaths) {
 }
 
 if (-not $playwrightScript) {
-    Write-Host "✗ Fehler: playwright.ps1 nicht gefunden!" -ForegroundColor Red
+    Write-Host "  ! Playwright-Skript nicht gefunden" -ForegroundColor Yellow
+    Write-Host "  → Projekt wird gebaut..." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Bitte führen Sie zuerst aus:" -ForegroundColor Yellow
-    Write-Host "  dotnet build" -ForegroundColor White
+
+    try {
+        dotnet build
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  ✓ Projekt erfolgreich gebaut" -ForegroundColor Green
+
+            # Erneut prüfen
+            foreach ($path in $possiblePaths) {
+                if (Test-Path $path) {
+                    $playwrightScript = $path
+                    break
+                }
+            }
+        } else {
+            Write-Host "  ✗ Fehler beim Bauen des Projekts" -ForegroundColor Red
+            exit 1
+        }
+    } catch {
+        Write-Host "  ✗ Fehler beim Bauen: $_" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "  ✓ Projekt ist gebaut" -ForegroundColor Green
+}
+
+if (-not $playwrightScript) {
     Write-Host ""
+    Write-Host "✗ Fehler: playwright.ps1 konnte nicht gefunden werden!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Gefundenes Playwright-Skript: $playwrightScript" -ForegroundColor Green
+Write-Host "  Gefundenes Skript: $playwrightScript" -ForegroundColor Gray
 Write-Host ""
 
 # Überprüfe PowerShell Core

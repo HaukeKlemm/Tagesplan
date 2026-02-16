@@ -14,9 +14,12 @@
    ```
 
 Das war's! Das Skript installiert automatisch:
-- .NET 8 SDK
-- NuGet-Pakete (ClosedXML, Playwright)
-- Browser für MEWS-Automation
+- ✅ .NET 8 SDK
+- ✅ PowerShell Core (für Playwright)
+- ✅ NuGet-Pakete (ClosedXML, Playwright)
+- ✅ Browser für MEWS-Automation
+
+**WICHTIG:** Das Projekt wird automatisch gebaut. Nach dem Setup ist alles bereit!
 
 ---
 
@@ -26,17 +29,45 @@ Das war's! Das Skript installiert automatisch:
 # 1. .NET 8 installieren
 winget install Microsoft.DotNet.SDK.8
 
-# 2. Zum Projektordner
+# 2. PowerShell Core installieren (WICHTIG für Playwright!)
+winget install Microsoft.PowerShell
+
+# 3. PowerShell NEU STARTEN, dann:
 cd "C:\Pfad\Zu\Tagesplan"
 
-# 3. Pakete installieren
+# 4. Pakete installieren
 dotnet restore
 
-# 4. Projekt bauen
+# 5. Projekt bauen (WICHTIG - muss VOR Playwright passieren!)
 dotnet build
 
-# 5. Playwright installieren
-pwsh .\bin\Debug\net8.0-windows\playwright.ps1 install
+# 6. Playwright installieren
+pwsh .\bin\Debug\net8.0-windows\playwright.ps1 install chromium
+```
+
+⚠️ **Reihenfolge beachten:** Build MUSS vor Playwright-Installation erfolgen!
+
+---
+
+## Häufigster Fehler & Lösung
+
+### ❌ "please ensure to build your project before running playwright"
+
+**Ursache:** Projekt wurde noch nicht gebaut oder PowerShell Core fehlt
+
+**Lösung:**
+```powershell
+# PowerShell Core installieren (falls noch nicht vorhanden)
+winget install Microsoft.PowerShell
+
+# PowerShell neu starten, dann Projekt bauen
+dotnet build
+
+# DANN Playwright installieren
+pwsh .\bin\Debug\net8.0-windows\playwright.ps1 install chromium
+
+# Oder verwende das Fix-Skript:
+.\fix-playwright.ps1
 ```
 
 ---

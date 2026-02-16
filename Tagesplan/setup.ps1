@@ -61,7 +61,7 @@ try {
 Write-Host ""
 
 # Schritt 3: Projekt bauen
-Write-Host "[3/4] Baue Projekt..." -ForegroundColor Green
+Write-Host "[3/5] Baue Projekt..." -ForegroundColor Green
 try {
     dotnet build --configuration Release
     if ($LASTEXITCODE -eq 0) {
@@ -77,7 +77,27 @@ try {
 }
 Write-Host ""
 
-# Schritt 4: Playwright installieren
+# Schritt 4: PowerShell Core installieren (falls nötig)
+Write-Host "[4/5] Überprüfe PowerShell Core..." -ForegroundColor Green
+$pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+if (-not $pwsh) {
+    Write-Host "  → PowerShell Core wird installiert..." -ForegroundColor Yellow
+    try {
+        winget install Microsoft.PowerShell --accept-source-agreements --accept-package-agreements --silent
+        Write-Host "  ✓ PowerShell Core erfolgreich installiert" -ForegroundColor Green
+
+        # Aktualisiere PATH
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    } catch {
+        Write-Host "  ! PowerShell Core Installation fehlgeschlagen: $_" -ForegroundColor Yellow
+        Write-Host "  Playwright wird beim ersten MEWS-Login automatisch installiert." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  ✓ PowerShell Core ist bereits installiert" -ForegroundColor Green
+}
+Write-Host ""
+
+# Schritt 5: Playwright installieren
 Write-Host "[4/4] Installiere Playwright-Browser..." -ForegroundColor Green
 
 # Prüfe ob pwsh verfügbar ist

@@ -1,5 +1,10 @@
 # Installation auf einem neuen Rechner
 
+⚠️ **WICHTIG:** Das Projekt MUSS gebaut werden, BEVOR Playwright installiert wird!  
+📘 Siehe `PLAYWRIGHT_BUILD_GUIDE.md` für Details.
+
+---
+
 ## Automatische Installation (Empfohlen)
 
 ### Option 1: Mit setup.ps1 Skript

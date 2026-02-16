@@ -176,11 +176,38 @@ namespace Tagesplan.Services
 
                 if (!File.Exists(playwrightScriptPath))
                 {
-                    UpdateStatus($"✗ Playwright-Skript nicht gefunden: {playwrightScriptPath}");
+                    UpdateStatus("✗ Playwright-Skript nicht gefunden!");
+                    UpdateStatus($"  Erwarteter Pfad: {playwrightScriptPath}");
+                    UpdateStatus("  Das Projekt muss zuerst gebaut werden.");
+                    UpdateStatus("  ");
+                    UpdateStatus("  Lösungsvorschläge:");
+                    UpdateStatus("  1. In Visual Studio: Drücken Sie F6 zum Bauen");
+                    UpdateStatus("  2. In PowerShell: dotnet build");
+                    UpdateStatus("  3. Schließen Sie die App, bauen Sie das Projekt, starten Sie neu");
                     return false;
                 }
 
-                UpdateStatus("Starte Playwright-Installation...");
+                // Check if pwsh (PowerShell Core) is available
+                var pwshAvailable = await IsPowerShellCoreAvailableAsync();
+                if (!pwshAvailable)
+                {
+                    UpdateStatus("✗ PowerShell Core (pwsh) nicht gefunden!");
+                    UpdateStatus("  Bitte installieren Sie PowerShell Core:");
+                    UpdateStatus("  winget install Microsoft.PowerShell");
+
+                    // Show path to fix script relative to assembly location
+                    var assemblyDir = Path.GetDirectoryName(assemblyPath);
+                    var projectRoot = Path.GetFullPath(Path.Combine(assemblyDir!, "..", "..", "..", ".."));
+                    var fixScriptPath = Path.Combine(projectRoot, "fix-playwright.ps1");
+
+                    if (File.Exists(fixScriptPath))
+                    {
+                        UpdateStatus($"  Oder verwenden Sie: pwsh \"{fixScriptPath}\"");
+                    }
+                    return false;
+                }
+
+                UpdateStatus("Starte Playwright-Installation (ca. 2-3 Minuten)...");
 
                 // Run the playwright install command using PowerShell
                 var processStartInfo = new System.Diagnostics.ProcessStartInfo
@@ -200,28 +227,82 @@ namespace Tagesplan.Services
                     return false;
                 }
 
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
+                // Show progress
+                var outputTask = Task.Run(async () =>
+                {
+                    string? line;
+                    while ((line = await process.StandardOutput.ReadLineAsync()) != null)
+                    {
+                        if (line.Contains("Downloading") || line.Contains("Installing"))
+                        {
+                            UpdateStatus($"  {line}");
+                        }
+                    }
+                });
+
+                var errorOutput = await process.StandardError.ReadToEndAsync();
                 await process.WaitForExitAsync();
+                await outputTask;
 
                 if (process.ExitCode == 0)
                 {
-                    UpdateStatus("✓ Playwright-Installation abgeschlossen");
+                    UpdateStatus("✓ Playwright-Installation erfolgreich abgeschlossen!");
                     return true;
                 }
                 else
                 {
                     UpdateStatus($"✗ Playwright-Installation fehlgeschlagen (Exit Code: {process.ExitCode})");
-                    if (!string.IsNullOrWhiteSpace(error))
+                    if (!string.IsNullOrWhiteSpace(errorOutput))
                     {
-                        UpdateStatus($"  Fehler: {error}");
+                        UpdateStatus($"  Fehler: {errorOutput}");
                     }
+
+                    // Show actual command to run manually
+                    UpdateStatus("  Manuell installieren mit:");
+                    UpdateStatus($"  pwsh \"{playwrightScriptPath}\" install chromium");
                     return false;
                 }
             }
             catch (Exception ex)
             {
                 UpdateStatus($"✗ Fehler bei Playwright-Installation: {ex.Message}");
+
+                // Try to provide helpful path info
+                var assemblyPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                if (assemblyPath != null)
+                {
+                    var playwrightScriptPath = Path.Combine(assemblyPath, "playwright.ps1");
+                    UpdateStatus($"  Erwarteter Pfad: {playwrightScriptPath}");
+                }
+                return false;
+            }
+        }
+
+        private async Task<bool> IsPowerShellCoreAvailableAsync()
+        {
+            try
+            {
+                var processStartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "pwsh",
+                    Arguments = "--version",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(processStartInfo);
+                if (process == null)
+                {
+                    return false;
+                }
+
+                await process.WaitForExitAsync();
+                return process.ExitCode == 0;
+            }
+            catch
+            {
                 return false;
             }
         }
