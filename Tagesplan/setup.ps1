@@ -109,8 +109,8 @@ if (-not $pwshAvailable) {
     $playwrightPath = ".\bin\Release\net8.0-windows\playwright.ps1"
     if (Test-Path $playwrightPath) {
         try {
-            Write-Host "  → Installiere Chromium-Browser..." -ForegroundColor Yellow
-            $installProcess = Start-Process -FilePath "pwsh" -ArgumentList "-File `"$playwrightPath`" install chromium" -NoNewWindow -Wait -PassThru
+            Write-Host "  → Installiere Chromium-Browser (ca. 2-3 Minuten)..." -ForegroundColor Yellow
+            $installProcess = Start-Process -FilePath "pwsh" -ArgumentList "-ExecutionPolicy Bypass -File `"$playwrightPath`" install chromium" -NoNewWindow -Wait -PassThru
 
             if ($installProcess.ExitCode -eq 0) {
                 Write-Host "  ✓ Playwright-Browser erfolgreich installiert" -ForegroundColor Green

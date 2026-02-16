@@ -209,11 +209,11 @@ namespace Tagesplan.Services
 
                 UpdateStatus("Starte Playwright-Installation (ca. 2-3 Minuten)...");
 
-                // Run the playwright install command using PowerShell
+                // Run the playwright install command using PowerShell with ExecutionPolicy Bypass
                 var processStartInfo = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "pwsh",
-                    Arguments = $"-File \"{playwrightScriptPath}\" install chromium",
+                    Arguments = $"-ExecutionPolicy Bypass -File \"{playwrightScriptPath}\" install chromium",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,

@@ -37,16 +37,42 @@ Die Anwendung versucht automatisch, Playwright beim ersten Klick auf "1. MEWS Lo
 
 ---
 
-## Problem 2: PowerShell Execution Policy
+## Problem 2: PowerShell Execution Policy / Digitale Signatur
 
 ### Symptom
 ```
-Die Datei "setup.ps1" kann nicht geladen werden...
+Die Datei "playwright.ps1" kann nicht geladen werden.
+Die Datei ist nicht digital signiert.
+File cannot be loaded because running scripts is disabled on this system.
 ```
 
-### Lösung
+### Ursache
+PowerShell Execution Policy blockiert unsignierte Skripte.
+
+### Lösung - Automatisch (Anwendung macht das bereits!)
+Die Anwendung verwendet automatisch `-ExecutionPolicy Bypass`, sodass dieses Problem normalerweise **nicht** auftritt.
+
+### Lösung - Manuell (falls doch nötig)
+
+**Option 1 - Temporär (Empfohlen):**
 ```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+pwsh -ExecutionPolicy Bypass -File .\bin\Debug\net8.0-windows\playwright.ps1 install chromium
+```
+
+**Option 2 - Dauerhaft für Benutzer:**
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Option 3 - Nur aktuelles Fenster:**
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process
+pwsh .\bin\Debug\net8.0-windows\playwright.ps1 install chromium
+```
+
+**Option 4 - Setup-Skripte:**
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
 ---

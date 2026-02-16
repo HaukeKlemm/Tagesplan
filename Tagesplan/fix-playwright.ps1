@@ -99,11 +99,11 @@ Write-Host ""
 
 try {
     $process = Start-Process -FilePath "pwsh" `
-        -ArgumentList "-File `"$playwrightScript`" install chromium" `
+        -ArgumentList "-ExecutionPolicy Bypass -File `"$playwrightScript`" install chromium" `
         -NoNewWindow `
         -Wait `
         -PassThru
-    
+
     if ($process.ExitCode -eq 0) {
         Write-Host ""
         Write-Host "========================================" -ForegroundColor Cyan
@@ -116,7 +116,7 @@ try {
         Write-Host "✗ Installation fehlgeschlagen (Exit Code: $($process.ExitCode))" -ForegroundColor Red
         Write-Host ""
         Write-Host "Versuchen Sie manuell:" -ForegroundColor Yellow
-        Write-Host "  pwsh $playwrightScript install chromium" -ForegroundColor White
+        Write-Host "  pwsh -ExecutionPolicy Bypass -File `"$playwrightScript`" install chromium" -ForegroundColor White
         exit 1
     }
 } catch {
