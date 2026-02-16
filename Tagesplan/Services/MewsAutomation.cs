@@ -59,6 +59,7 @@ namespace Tagesplan.Services
                     Headless = false,
                     Channel = "msedge",
                     AcceptDownloads = true,
+                    DownloadsPath = _downloadPath,  // WICHTIG: Download-Ziel für Playwright setzen!
                     Args = new[]
                     {
                         "--disable-blink-features=AutomationControlled",
