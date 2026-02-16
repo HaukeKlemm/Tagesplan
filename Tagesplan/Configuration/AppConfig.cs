@@ -5,13 +5,30 @@ namespace Tagesplan.Configuration
     public class AppConfig
     {
         public string MewsUrl { get; set; } = "https://app.mews.com";
-        public string DownloadPath { get; set; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
-            "MEWS_Downloads");
+
+        // Download path is now relative to the application location
+        public string DownloadPath { get; set; } = GetDefaultDownloadPath();
+
         public int BreakfastOverviewDays { get; set; } = 14;
         public int OccupancyOverviewDays { get; set; } = 7;
         public bool AutoOpenExcelAfterExport { get; set; } = true;
         public int PlaywrightTimeoutSeconds { get; set; } = 300;
+
+        private static string GetDefaultDownloadPath()
+        {
+            // Get the application's directory
+            var assemblyPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var assemblyDir = Path.GetDirectoryName(assemblyPath);
+
+            // Go up from bin\Debug\net8.0-windows -> up 3 levels to project -> up 1 to Tagesplan-main -> up 1 more to parent
+            // Result: C:\Users\offic\Desktop\Tagesplan\MEWS-Downloads\
+            var projectParent = Path.GetFullPath(Path.Combine(assemblyDir!, "..", "..", "..", "..", ".."));
+
+            // Create MEWS-Downloads folder on same level as Tagesplan-main
+            var downloadPath = Path.Combine(projectParent, "MEWS-Downloads");
+
+            return downloadPath;
+        }
         
         private static string ConfigFilePath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
